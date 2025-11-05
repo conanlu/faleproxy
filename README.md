@@ -1,6 +1,6 @@
 # Faleproxy
 
-A Node.js web application that fetches a URL, replaces every instance of "Yale" with "Fale" in the document, and displays the modified content. Edited slightly by Conan
+A Node.js web application that fetches a URL, replaces every instance of "Yale" with "Fale" in the document, and displays the modified content. Edited slightly by Conan. Updated for hw8
 
 ## Features
 
