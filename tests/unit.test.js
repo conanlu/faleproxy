@@ -57,7 +57,7 @@ describe('Yale to Fale replacement logic', () => {
       </head>
       <body>
         <h1>Hello World</h1>
-        <p>This is a test page with no references.</p>
+        <p>This is a test page with no Yale references.</p>
       </body>
       </html>
     `;
@@ -77,10 +77,10 @@ describe('Yale to Fale replacement logic', () => {
     
     const modifiedHtml = $.html();
     
-    // Content should remain the same since there's no Yale to replace
+    // Content should remain the same
     expect(modifiedHtml).toContain('<title>Test Page</title>');
     expect(modifiedHtml).toContain('<h1>Hello World</h1>');
-    expect(modifiedHtml).toContain('<p>This is a test page with no references.</p>');
+    expect(modifiedHtml).toContain('<p>This is a test page with no Yale references.</p>');
   });
 
   test('should handle case-insensitive replacements', () => {
@@ -94,11 +94,7 @@ describe('Yale to Fale replacement logic', () => {
       return this.nodeType === 3;
     }).each(function() {
       const text = $(this).text();
-      // Replace while preserving case: YALE->FALE, Yale->Fale, yale->fale
-      const newText = text
-        .replace(/YALE/g, 'FALE')
-        .replace(/Yale/g, 'Fale')
-        .replace(/yale/g, 'fale');
+      const newText = text.replace(/Yale/gi, 'Fale');
       if (text !== newText) {
         $(this).replaceWith(newText);
       }
