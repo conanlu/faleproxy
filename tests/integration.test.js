@@ -9,7 +9,7 @@ const fs = require('fs').promises;
 
 // Set a different port for testing to avoid conflict with the main app
 const TEST_PORT = 3099;
-let server;
+let serverPid;
 
 describe('Integration Tests', () => {
   // Modify the app to use a test port
@@ -24,10 +24,14 @@ describe('Integration Tests', () => {
     await fs.writeFile('app.test.js', modifiedContent);
     
     // Start the test server
-    server = require('child_process').spawn('node', ['app.test.js'], {
+    const server = require('child_process').spawn('node', ['app.test.js'], {
       detached: true,
       stdio: 'ignore'
     });
+    
+    // Store only the PID to avoid circular reference issues
+    serverPid = server.pid;
+    server.unref(); // Allow the parent process to exit independently
     
     // Give the server time to start
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -35,10 +39,14 @@ describe('Integration Tests', () => {
 
   afterAll(async () => {
     // Kill the test server and clean up
-    if (server && server.pid) {
-      process.kill(-server.pid);
+    if (serverPid) {
+      try {
+        process.kill(-serverPid);
+      } catch (error) {
+        // Process may already be dead
+      }
     }
-    await execAsync('rm app.test.js');
+    await execAsync('rm -f app.test.js');
     nock.cleanAll();
     nock.enableNetConnect();
   });
