@@ -5,6 +5,7 @@ const { promisify } = require('util');
 const execAsync = promisify(exec);
 const { sampleHtmlWithYale } = require('./test-utils');
 const nock = require('nock');
+const fs = require('fs').promises;
 
 // Set a different port for testing to avoid conflict with the main app
 const TEST_PORT = 3099;
@@ -17,9 +18,10 @@ describe('Integration Tests', () => {
     nock.disableNetConnect();
     nock.enableNetConnect('127.0.0.1');
     
-    // Create a temporary test app file
-    await execAsync('cp app.js app.test.js');
-    await execAsync(`sed -i '' "s/const PORT = 3001/const PORT = ${TEST_PORT}/" app.test.js`);
+    // Create a temporary test app file with modified port
+    const appContent = await fs.readFile('app.js', 'utf8');
+    const modifiedContent = appContent.replace('const PORT = 3001', `const PORT = ${TEST_PORT}`);
+    await fs.writeFile('app.test.js', modifiedContent);
     
     // Start the test server
     server = require('child_process').spawn('node', ['app.test.js'], {
