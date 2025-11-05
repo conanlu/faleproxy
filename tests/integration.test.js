@@ -16,6 +16,7 @@ describe('Integration Tests', () => {
   beforeAll(async () => {
     // Mock external HTTP requests
     nock.disableNetConnect();
+    nock.enableNetConnect('localhost');
     nock.enableNetConnect('127.0.0.1');
     
     // Create a temporary test app file with modified port
