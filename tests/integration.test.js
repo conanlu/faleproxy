@@ -53,18 +53,25 @@ describe('Integration Tests', () => {
 
   test('Should replace Yale with Fale in fetched content', async () => {
     // Setup mock for example.com
-    nock('https://example.com')
+    const scope = nock('https://example.com')
       .get('/')
       .reply(200, sampleHtmlWithYale);
     
     // Make a request to our proxy app
-    const response = await axios.post(`http://localhost:${TEST_PORT}/fetch`, {
-      url: 'https://example.com/'
-    });
-    
-    // Extract only the data we need to avoid circular references
-    const { status } = response;
-    const { success, content } = response.data;
+    let status, success, content;
+    try {
+      const response = await axios.post(`http://localhost:${TEST_PORT}/fetch`, {
+        url: 'https://example.com/'
+      });
+      
+      // Extract only the data we need to avoid circular references
+      status = response.status;
+      success = response.data.success;
+      content = response.data.content;
+    } catch (err) {
+      // Don't store the error object
+      throw new Error(err.message);
+    }
     
     expect(status).toBe(200);
     expect(success).toBe(true);
@@ -88,9 +95,13 @@ describe('Integration Tests', () => {
     
     // Verify link text is changed
     expect($('a').first().text()).toBe('About Fale');
+    
+    // Clean up nock scope
+    scope.done();
   }, 10000); // Increase timeout for this test
 
   test('Should handle invalid URLs', async () => {
+    let errorStatus;
     try {
       await axios.post(`http://localhost:${TEST_PORT}/fetch`, {
         url: 'not-a-valid-url'
@@ -99,22 +110,23 @@ describe('Integration Tests', () => {
       expect(true).toBe(false);
     } catch (error) {
       // Extract only the status to avoid circular references
-      const status = error.response?.status;
-      expect(status).toBe(500);
+      errorStatus = error.response?.status || error.status;
     }
+    expect(errorStatus).toBe(500);
   });
 
   test('Should handle missing URL parameter', async () => {
+    let errorStatus, errorMessage;
     try {
       await axios.post(`http://localhost:${TEST_PORT}/fetch`, {});
       // Should not reach here
       expect(true).toBe(false);
     } catch (error) {
       // Extract only the data we need to avoid circular references
-      const status = error.response?.status;
-      const errorMessage = error.response?.data?.error;
-      expect(status).toBe(400);
-      expect(errorMessage).toBe('URL is required');
+      errorStatus = error.response?.status || error.status;
+      errorMessage = error.response?.data?.error;
     }
+    expect(errorStatus).toBe(400);
+    expect(errorMessage).toBe('URL is required');
   });
 });
