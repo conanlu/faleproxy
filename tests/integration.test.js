@@ -14,10 +14,9 @@ let serverPid;
 describe('Integration Tests', () => {
   // Modify the app to use a test port
   beforeAll(async () => {
-    // Mock external HTTP requests
+    // Mock external HTTP requests but allow localhost
     nock.disableNetConnect();
-    nock.enableNetConnect('localhost');
-    nock.enableNetConnect('127.0.0.1');
+    nock.enableNetConnect(/^(localhost|127\.0\.0\.1)/);
     
     // Create a temporary test app file with modified port
     const appContent = await fs.readFile('app.js', 'utf8');
@@ -27,16 +26,29 @@ describe('Integration Tests', () => {
     // Start the test server
     const server = require('child_process').spawn('node', ['app.test.js'], {
       detached: true,
-      stdio: 'ignore'
+      stdio: ['ignore', 'pipe', 'pipe']
     });
     
     // Store only the PID to avoid circular reference issues
     serverPid = server.pid;
-    server.unref(); // Allow the parent process to exit independently
     
-    // Give the server time to start
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }, 10000); // Increase timeout for server startup
+    // Wait for server to be ready by checking if port is listening
+    let retries = 20;
+    while (retries > 0) {
+      try {
+        await axios.get(`http://localhost:${TEST_PORT}/`);
+        break;
+      } catch (err) {
+        retries--;
+        if (retries === 0) {
+          throw new Error('Server failed to start');
+        }
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    server.unref(); // Allow the parent process to exit independently
+  }, 15000); // Increase timeout for server startup
 
   afterAll(async () => {
     // Kill the test server and clean up
