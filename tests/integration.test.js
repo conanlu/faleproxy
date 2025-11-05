@@ -62,11 +62,15 @@ describe('Integration Tests', () => {
       url: 'https://example.com/'
     });
     
-    expect(response.status).toBe(200);
-    expect(response.data.success).toBe(true);
+    // Extract only the data we need to avoid circular references
+    const { status } = response;
+    const { success, content } = response.data;
+    
+    expect(status).toBe(200);
+    expect(success).toBe(true);
     
     // Verify Yale has been replaced with Fale in text
-    const $ = cheerio.load(response.data.content);
+    const $ = cheerio.load(content);
     expect($('title').text()).toBe('Fale University Test Page');
     expect($('h1').text()).toBe('Welcome to Fale University');
     expect($('p').first().text()).toContain('Fale University is a private');
@@ -94,7 +98,9 @@ describe('Integration Tests', () => {
       // Should not reach here
       expect(true).toBe(false);
     } catch (error) {
-      expect(error.response.status).toBe(500);
+      // Extract only the status to avoid circular references
+      const status = error.response?.status;
+      expect(status).toBe(500);
     }
   });
 
@@ -104,8 +110,11 @@ describe('Integration Tests', () => {
       // Should not reach here
       expect(true).toBe(false);
     } catch (error) {
-      expect(error.response.status).toBe(400);
-      expect(error.response.data.error).toBe('URL is required');
+      // Extract only the data we need to avoid circular references
+      const status = error.response?.status;
+      const errorMessage = error.response?.data?.error;
+      expect(status).toBe(400);
+      expect(errorMessage).toBe('URL is required');
     }
   });
 });
